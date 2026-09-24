@@ -1,0 +1,427 @@
+{
+  "info": {
+    "_postman_id": "c1f7a290-7d31-4a11-89b4-933e4f38e765",
+    "name": "RideLink - Driver & Vehicle Service",
+    "description": "API collection for RideLink Driver & Vehicle Microservice (Member 2: Kishalini). Exercises operational profiles, vehicle management, availability, location, and interservice eligible driver lookup.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8082",
+      "type": "string"
+    },
+    {
+      "key": "driverServiceToken",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMTExMTExMS0xMTExLTExMTEtMTExMS0xMTExMTExMTExMTEiLCJyb2xlIjoiRFJJVkVSIn0.TVVbvZbkG5o8sCsIU-lBQjPJI0CHFCWYxMRUKM18r5o",
+      "type": "string"
+    },
+    {
+      "key": "driverId",
+      "value": "e673a7d5-cc86-464a-bb90-cbb72a364c7e",
+      "type": "string"
+    },
+    {
+      "key": "driverWithoutVehicleId",
+      "value": "23b89711-dd97-4bc4-9b65-ee6c00c8a647",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Register Driver - Success",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 201\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "var jsonData = pm.response.json();",
+              "if (jsonData.id) {",
+              "    pm.collectionVariables.set(\"driverId\", jsonData.id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{driverServiceToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"accountId\": \"{{$guid}}\",\n  \"fullName\": \"Sunil Shantha\",\n  \"phoneNumber\": \"+94771234888\",\n  \"licenseNumber\": \"B{{$randomInt}}\",\n  \"serviceArea\": \"Colombo\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/drivers",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "drivers"
+          ]
+        },
+        "description": "Registers a new driver operational profile. Must be called with DRIVER or ADMIN JWT token."
+      },
+      "response": []
+    },
+    {
+      "name": "Attach Vehicle - Success",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{driverServiceToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"make\": \"Toyota\",\n  \"model\": \"Axio\",\n  \"year\": 2022,\n  \"plateNumber\": \"WP-CAA-{{$randomInt}}\",\n  \"color\": \"Silver\",\n  \"vehicleType\": \"SEDAN\",\n  \"seatCapacity\": 4\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/drivers/{{driverId}}/vehicle",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "drivers",
+            "{{driverId}}",
+            "vehicle"
+          ]
+        },
+        "description": "Attaches or updates the vehicle details for an existing driver profile."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Availability - Available",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{driverServiceToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"availabilityStatus\": \"AVAILABLE\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/drivers/{{driverId}}/availability",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "drivers",
+            "{{driverId}}",
+            "availability"
+          ]
+        },
+        "description": "Updates driver availability to AVAILABLE (requires a registered vehicle)."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Availability - Offline",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{driverServiceToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"availabilityStatus\": \"OFFLINE\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/drivers/{{driverId}}/availability",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "drivers",
+            "{{driverId}}",
+            "availability"
+          ]
+        },
+        "description": "Takes the driver OFFLINE."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Location - Success",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{driverServiceToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"latitude\": 6.9271,\n  \"longitude\": 79.8612,\n  \"serviceArea\": \"Colombo\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/drivers/{{driverId}}/location",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "drivers",
+            "{{driverId}}",
+            "location"
+          ]
+        },
+        "description": "Updates driver's simulated GPS location and declared service area."
+      },
+      "response": []
+    },
+    {
+      "name": "Get Driver by ID",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{driverServiceToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/drivers/{{driverId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "drivers",
+            "{{driverId}}"
+          ]
+        },
+        "description": "Retrieves the full profile of a driver by their UUID."
+      },
+      "response": []
+    },
+    {
+      "name": "List All Drivers",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{driverServiceToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/drivers",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "drivers"
+          ]
+        },
+        "description": "Lists all registered driver profiles (Admin/Demo use)."
+      },
+      "response": []
+    },
+    {
+      "name": "Eligible Drivers - Colombo (Success)",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/drivers/eligible?serviceArea=Colombo",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "drivers",
+            "eligible"
+          ],
+          "query": [
+            {
+              "key": "serviceArea",
+              "value": "Colombo"
+            }
+          ]
+        },
+        "description": "Public interservice endpoint called by Ride Management Service to find available drivers in Colombo."
+      },
+      "response": []
+    },
+    {
+      "name": "Eligible Drivers - All Areas (Omit Parameter)",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/drivers/eligible",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "drivers",
+            "eligible"
+          ]
+        },
+        "description": "Searches all service areas for available drivers by omitting the serviceArea parameter."
+      },
+      "response": []
+    },
+    {
+      "name": "Eligible Drivers - No Match (Negative Case 1)",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/drivers/eligible?serviceArea=NoSuchPlace",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "drivers",
+            "eligible"
+          ],
+          "query": [
+            {
+              "key": "serviceArea",
+              "value": "NoSuchPlace"
+            }
+          ]
+        },
+        "description": "Negative scenario #1: When no drivers match the requested area, returns 200 OK with an empty array []."
+      },
+      "response": []
+    },
+    {
+      "name": "Update Availability Without Vehicle (Negative Case 2)",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{driverServiceToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"availabilityStatus\": \"AVAILABLE\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/drivers/{{driverWithoutVehicleId}}/availability",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "drivers",
+            "{{driverWithoutVehicleId}}",
+            "availability"
+          ]
+        },
+        "description": "Negative scenario #2: Attempting to set availability to AVAILABLE when no vehicle is registered returns 400 Bad Request (INVALID_STATE)."
+      },
+      "response": []
+    }
+  ]
+}
