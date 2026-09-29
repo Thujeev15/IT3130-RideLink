@@ -5,8 +5,7 @@
 target/
 *.class
 
-# Spring Boot local configuration
-**/src/main/resources/application.properties
+
 
 # Environment files
 .env
