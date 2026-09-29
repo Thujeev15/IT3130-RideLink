@@ -1,0 +1,13 @@
+# Mac
+.DS_Store
+
+# Java / Maven
+target/
+*.class
+
+# Spring Boot local configuration
+**/src/main/resources/application.properties
+
+# Environment files
+.env
+*.env
