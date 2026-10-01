@@ -16,6 +16,22 @@ jobs:
     name: Build & Test Microservices
     runs-on: ubuntu-latest
 
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: account_db
+          MYSQL_USER: account_user
+          MYSQL_PASSWORD: Thujeev@2026#MySQL
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -u account_user -pAccount@2026"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
     strategy:
       fail-fast: false
       matrix:
