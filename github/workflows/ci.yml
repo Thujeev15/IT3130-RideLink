@@ -10,7 +10,7 @@ on:
     branches:
       - main
       - develop
-s
+
 jobs:
   build-and-test:
     name: Build & Test Microservices
