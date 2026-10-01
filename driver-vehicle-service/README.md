@@ -37,7 +37,7 @@ Service starts on `http://localhost:8082` by default (`SERVER_PORT`).
 ```
 mvn test
 ```
-Tests run against an in-memory H2 database, no MySQL required.
+Tests run against the MySQL database configured by the test properties. The CI workflow starts MySQL and creates the required test database.
 
 ## Endpoints
 
