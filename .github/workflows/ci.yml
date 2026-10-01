@@ -23,7 +23,7 @@ jobs:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: account_db
           MYSQL_USER: account_user
-          MYSQL_PASSWORD: Thujeev@2026#MySQL
+          MYSQL_PASSWORD: Account@2026
         ports:
           - 3306:3306
         options: >-
