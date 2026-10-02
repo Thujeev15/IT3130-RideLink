@@ -25,11 +25,17 @@ public class Ride {
     @Column(length = 100)
     private String driverId;
 
+    @Column(length = 100)
+    private String driverAccountId;
+
     @Column(nullable = false, length = 255)
     private String pickupLocation;
 
     @Column(nullable = false, length = 255)
     private String destination;
+
+    @Column(nullable = false)
+    private double distanceKm;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -59,11 +65,13 @@ public class Ride {
     protected Ride() {
     }
 
-    public Ride(UUID id, String passengerId, String pickupLocation, String destination, RideStatus status, Instant requestedAt) {
+    public Ride(UUID id, String passengerId, String pickupLocation, String destination, double distanceKm,
+                RideStatus status, Instant requestedAt) {
         this.id = id;
         this.passengerId = passengerId;
         this.pickupLocation = pickupLocation;
         this.destination = destination;
+        this.distanceKm = distanceKm;
         this.status = status;
         this.requestedAt = requestedAt;
     }
@@ -92,6 +100,14 @@ public class Ride {
         this.driverId = driverId;
     }
 
+    public String getDriverAccountId() {
+        return driverAccountId;
+    }
+
+    public void setDriverAccountId(String driverAccountId) {
+        this.driverAccountId = driverAccountId;
+    }
+
     public String getPickupLocation() {
         return pickupLocation;
     }
@@ -106,6 +122,14 @@ public class Ride {
 
     public void setDestination(String destination) {
         this.destination = destination;
+    }
+
+    public double getDistanceKm() {
+        return distanceKm;
+    }
+
+    public void setDistanceKm(double distanceKm) {
+        this.distanceKm = distanceKm;
     }
 
     public RideStatus getStatus() {
