@@ -1,6 +1,6 @@
 # RideLink · Driver & Vehicle Service
 
-Owner: **Kishalini** (Member 2)
+Owner: **Anthujan** (Member 2)
 
 Owns: driver operational profiles, vehicle details, availability status, simulated
 current location / service area, and eligible-driver lookup used by the Ride
