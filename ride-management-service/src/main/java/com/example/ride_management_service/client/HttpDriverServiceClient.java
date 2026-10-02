@@ -25,7 +25,7 @@ public class HttpDriverServiceClient implements DriverServiceClient {
     public List<EligibleDriverCandidate> getEligibleDrivers(String pickupLocation) {
         try {
             List<EligibleDriverCandidate> candidates = restClient.get()
-                    .uri(baseUrl + "/api/drivers/eligible?pickupLocation={pickupLocation}", pickupLocation)
+                    .uri(baseUrl + "/api/drivers/eligible?serviceArea={serviceArea}", pickupLocation)
                     .retrieve()
                     .body(new ParameterizedTypeReference<>() {
                     });

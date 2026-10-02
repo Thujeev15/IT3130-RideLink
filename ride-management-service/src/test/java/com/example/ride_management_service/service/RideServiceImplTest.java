@@ -2,6 +2,7 @@ package com.example.ride_management_service.service;
 
 import com.example.ride_management_service.client.DriverServiceClient;
 import com.example.ride_management_service.client.EligibleDriverCandidate;
+import com.example.ride_management_service.client.FareCalculationRequest;
 import com.example.ride_management_service.client.FareCalculationResult;
 import com.example.ride_management_service.client.FarePaymentServiceClient;
 import com.example.ride_management_service.dto.AssignDriverRequest;
@@ -17,12 +18,16 @@ import com.example.ride_management_service.exception.RideNotFoundException;
 import com.example.ride_management_service.exception.UnauthorizedRideActionException;
 import com.example.ride_management_service.repository.RideRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.time.Clock;
@@ -59,11 +64,17 @@ class RideServiceImplTest {
     @BeforeEach
     void setUp() {
         rideService = new RideServiceImpl(rideRepository, driverServiceClient, farePaymentServiceClient, Clock.fixed(FIXED_NOW, ZoneOffset.UTC));
+        authenticate("passenger-1", "PASSENGER");
+    }
+
+    @AfterEach
+    void clearAuthentication() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test
     void createRideSuccess() {
-        CreateRideRequest request = new CreateRideRequest("passenger-1", "Campus", "Airport");
+        CreateRideRequest request = new CreateRideRequest("passenger-1", "Campus", "Airport", 12.5);
         when(rideRepository.save(any(Ride.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         var response = rideService.createRide(request);
@@ -71,6 +82,9 @@ class RideServiceImplTest {
         assertThat(response.passengerId()).isEqualTo("passenger-1");
         assertThat(response.status()).isEqualTo(RideStatus.REQUESTED);
         assertThat(response.requestedAt()).isEqualTo(FIXED_NOW);
+        ArgumentCaptor<Ride> savedRide = ArgumentCaptor.forClass(Ride.class);
+        verify(rideRepository).save(savedRide.capture());
+        assertThat(savedRide.getValue().getDistanceKm()).isEqualTo(12.5);
     }
 
     @Test
@@ -96,12 +110,12 @@ class RideServiceImplTest {
         UUID rideId = UUID.randomUUID();
         Ride ride = sampleRide(rideId, RideStatus.REQUESTED);
         when(rideRepository.findById(rideId)).thenReturn(Optional.of(ride));
-        when(driverServiceClient.getEligibleDrivers(anyString())).thenReturn(List.of(new EligibleDriverCandidate("driver-1", "Driver One", "Zone A", 1.2)));
+        when(driverServiceClient.getEligibleDrivers(anyString())).thenReturn(List.of(new EligibleDriverCandidate(UUID.fromString("00000000-0000-0000-0000-000000000001"), UUID.randomUUID(), "Driver One", "0712345678", "LIC-1", "Zone A", 6.9, 79.8, "AVAILABLE", "Toyota", "Prius", "ABC-1234", "SEDAN", 4)));
         when(rideRepository.save(any(Ride.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         var response = rideService.assignDriver(rideId, new AssignDriverRequest(null));
 
-        assertThat(response.driverId()).isEqualTo("driver-1");
+        assertThat(response.driverId()).isEqualTo("00000000-0000-0000-0000-000000000001");
         assertThat(response.status()).isEqualTo(RideStatus.ASSIGNED);
         assertThat(response.assignedAt()).isEqualTo(FIXED_NOW);
     }
@@ -122,6 +136,7 @@ class RideServiceImplTest {
         UUID rideId = UUID.randomUUID();
         Ride ride = sampleRide(rideId, RideStatus.ASSIGNED);
         ride.setDriverId("driver-1");
+        authenticate("driver-account-1", "DRIVER");
         when(rideRepository.findById(rideId)).thenReturn(Optional.of(ride));
         when(rideRepository.save(any(Ride.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -145,6 +160,7 @@ class RideServiceImplTest {
         UUID rideId = UUID.randomUUID();
         Ride ride = sampleRide(rideId, RideStatus.ACCEPTED);
         ride.setDriverId("driver-1");
+        authenticate("driver-account-1", "DRIVER");
         when(rideRepository.findById(rideId)).thenReturn(Optional.of(ride));
         when(rideRepository.save(any(Ride.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -170,15 +186,20 @@ class RideServiceImplTest {
         UUID rideId = UUID.randomUUID();
         Ride ride = sampleRide(rideId, RideStatus.IN_PROGRESS);
         ride.setDriverId("driver-1");
+        authenticate("driver-account-1", "DRIVER");
         when(rideRepository.findById(rideId)).thenReturn(Optional.of(ride));
-        when(farePaymentServiceClient.calculateFinalFare(any())).thenReturn(new FareCalculationResult(new BigDecimal("12.50"), "LKR", "fare-123"));
+        when(farePaymentServiceClient.calculateFinalFare(any())).thenReturn(new FareCalculationResult("fare-123", rideId.toString(), 12.5, 1100.0, 1100.0));
         when(rideRepository.save(any(Ride.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         var response = rideService.completeRide(rideId, new RideDriverActionRequest("driver-1"));
 
+        ArgumentCaptor<FareCalculationRequest> fareRequest = ArgumentCaptor.forClass(FareCalculationRequest.class);
+        verify(farePaymentServiceClient).calculateFinalFare(fareRequest.capture());
+        assertThat(fareRequest.getValue().rideId()).isEqualTo(rideId);
+        assertThat(fareRequest.getValue().distanceKm()).isEqualTo(12.5);
         assertThat(response.status()).isEqualTo(RideStatus.COMPLETED);
         assertThat(response.completedAt()).isEqualTo(FIXED_NOW);
-        assertThat(response.estimatedFare()).isEqualByComparingTo("12.50");
+        assertThat(response.estimatedFare()).isEqualByComparingTo("1100.0");
         assertThat(response.estimatedFareReference()).isEqualTo("fare-123");
     }
 
@@ -224,6 +245,7 @@ class RideServiceImplTest {
         UUID rideId = UUID.randomUUID();
         Ride ride = sampleRide(rideId, RideStatus.ACCEPTED);
         ride.setDriverId("driver-1");
+        authenticate("driver-account-2", "DRIVER");
         when(rideRepository.findById(rideId)).thenReturn(Optional.of(ride));
 
         assertThatThrownBy(() -> rideService.startRide(rideId, new RideDriverActionRequest("driver-2")))
@@ -235,6 +257,7 @@ class RideServiceImplTest {
         UUID rideId = UUID.randomUUID();
         Ride ride = sampleRide(rideId, RideStatus.IN_PROGRESS);
         ride.setDriverId("driver-1");
+        authenticate("driver-account-1", "DRIVER");
         when(rideRepository.findById(rideId)).thenReturn(Optional.of(ride));
         when(farePaymentServiceClient.calculateFinalFare(any())).thenThrow(new ExternalServiceUnavailableException("Fare and payment service is unavailable", new RuntimeException("down")));
 
@@ -248,14 +271,14 @@ class RideServiceImplTest {
         Ride ride = sampleRide(rideId, RideStatus.REQUESTED);
         when(rideRepository.findById(rideId)).thenReturn(Optional.of(ride));
         when(driverServiceClient.getEligibleDrivers(anyString())).thenReturn(List.of(
-                new EligibleDriverCandidate("driver-1", "Driver One", "Zone A", 1.2),
-                new EligibleDriverCandidate("driver-2", "Driver Two", "Zone B", 1.4)
+            candidate("00000000-0000-0000-0000-000000000001", "Driver One", "Zone A"),
+            candidate("00000000-0000-0000-0000-000000000002", "Driver Two", "Zone B")
         ));
         when(rideRepository.save(any(Ride.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        var response = rideService.assignDriver(rideId, new AssignDriverRequest("driver-2"));
+        var response = rideService.assignDriver(rideId, new AssignDriverRequest("00000000-0000-0000-0000-000000000002"));
 
-        assertThat(response.driverId()).isEqualTo("driver-2");
+        assertThat(response.driverId()).isEqualTo("00000000-0000-0000-0000-000000000002");
     }
 
     @Test
@@ -263,13 +286,27 @@ class RideServiceImplTest {
         UUID rideId = UUID.randomUUID();
         Ride ride = sampleRide(rideId, RideStatus.REQUESTED);
         when(rideRepository.findById(rideId)).thenReturn(Optional.of(ride));
-        when(driverServiceClient.getEligibleDrivers(anyString())).thenReturn(List.of(new EligibleDriverCandidate("driver-1", "Driver One", "Zone A", 1.2)));
+        when(driverServiceClient.getEligibleDrivers(anyString())).thenReturn(List.of(candidate(
+            "00000000-0000-0000-0000-000000000001", "Driver One", "Zone A")));
 
-        assertThatThrownBy(() -> rideService.assignDriver(rideId, new AssignDriverRequest("driver-2")))
+        assertThatThrownBy(() -> rideService.assignDriver(rideId, new AssignDriverRequest("00000000-0000-0000-0000-000000000002")))
                 .isInstanceOf(NoEligibleDriverException.class);
     }
 
+    private EligibleDriverCandidate candidate(String id, String fullName, String serviceArea) {
+        return new EligibleDriverCandidate(UUID.fromString(id), UUID.randomUUID(), fullName, "0712345678",
+            "LIC-1", serviceArea, 6.9, 79.8, "AVAILABLE", "Toyota", "Prius", "ABC-1234", "SEDAN", 4);
+        }
+
     private Ride sampleRide(UUID rideId, RideStatus status) {
-        return new Ride(rideId, "passenger-1", "Campus", "Airport", status, FIXED_NOW);
+        Ride ride = new Ride(rideId, "passenger-1", "Campus", "Airport", 12.5, status, FIXED_NOW);
+        ride.setDriverAccountId("driver-account-1");
+        return ride;
+    }
+
+    private void authenticate(String accountId, String role) {
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(accountId, null,
+                        List.of(new SimpleGrantedAuthority("ROLE_" + role))));
     }
 }

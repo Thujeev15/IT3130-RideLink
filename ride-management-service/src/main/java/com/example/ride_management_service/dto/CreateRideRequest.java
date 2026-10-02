@@ -1,6 +1,7 @@
 package com.example.ride_management_service.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
 public record CreateRideRequest(
@@ -14,6 +15,9 @@ public record CreateRideRequest(
 
         @NotBlank(message = "Destination is required")
         @Size(max = 255, message = "Destination must not exceed 255 characters")
-        String destination
+        String destination,
+
+        @Positive(message = "Distance must be greater than 0")
+        double distanceKm
 ) {
 }

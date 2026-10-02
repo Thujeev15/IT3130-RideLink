@@ -34,7 +34,8 @@ class RideControllerValidationTest {
                                 {
                                   "passengerId": "",
                                   "pickupLocation": " ",
-                                  "destination": ""
+                                  "destination": "",
+                                  "distanceKm": 0
                                 }
                                 """))
                 .andExpect(status().isBadRequest())
@@ -51,7 +52,8 @@ class RideControllerValidationTest {
                                 {
                                   "passengerId": "passenger-1",
                                   "pickupLocation": "Campus",
-                                  "destination": "Airport"
+                                  "destination": "Airport",
+                                  "distanceKm": 12.5
                                 }
                                 """))
                 .andExpect(status().isCreated())
